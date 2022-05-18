@@ -21,7 +21,8 @@ def download_and_upload():
 
 
     r = s.results.dict()
-    return r['ping'],r['download'],r['upload']
+    print(r)
+    return r['ping'],r['download'],r['upload'],r['server']['name']+"-"+r['server']['country']
 
 def download():
     s = speedtest.Speedtest()
@@ -29,7 +30,7 @@ def download():
     s.download(threads=None)
 
     r = s.results.dict()
-    return r['ping'],r['download'],r['upload']
+    return r['ping'],r['download'],None,r['server']['name']+"-"+r['server']['country']
 
 def upload():
     s = speedtest.Speedtest()
@@ -38,7 +39,7 @@ def upload():
 
 
     r = s.results.dict()
-    return r['ping'],r['download'],r['upload']
+    return r['ping'],None,r['upload'],r['server']['name']+"-"+r['server']['country']
 
 
 def interpretador():
@@ -54,37 +55,42 @@ def interpretador():
     
     return i
 def read_data():
-  df = pd.io.parsers.read_csv(
-    'speedtest.log',
-    names='date time ping download upload'.split(),
-    header=None,
-    sep=r'\s+',
-    parse_dates={'timestamp':[0,1]},
-    na_values=['TEST','FAILED'],
+    df = pd.io.parsers.read_csv(
+        'speedtest.log',
+        names='date time ping download upload zone'.split(),
+        header=None,
+        sep=r'\s+',
+        parse_dates={'timestamp':[0,1]},
+        na_values=['TEST','FAILED'],
   )
 
-  print(df[-48:]) # return last 48 rows of data (i.e., 24 hours)
-
+    print(df[-48:]) # return last 48 rows of data (i.e., 24 hours)
+    return None,None,None
 def do_it(opc):
-    switch={
-        "download":download(),
-        "upload":upload(),
-        "tudo":download_and_upload(),
-        "read":read_data()
-    }
-    return switch.get(opc,'Invalid input')
-
+    if opc == "download":
+        return download()
+    elif opc == "upload":
+        return upload()
+    elif opc == "tudo":
+        return download_and_upload()
+    elif opc == "read":
+        return read_data()
 
 
 if __name__ == "__main__":
     setup_logging()
     opcao = interpretador()
-    if opcao == 'exit':
-        exit()
-    try:
-        ping, down, up, timestamp = do_it(opcao)
-    except ValueError as err:
-        logging.info(err)
-    else:
-        logging.info("%5.1f %5.1f %5.1f", ping, down, up)
-
+    while opcao != "exit":
+    
+        try:
+            ping, down, up, zone = do_it(opcao)
+        except ValueError as err:
+            print(err)
+        else:
+            if opcao == "download":
+                logging.info("%5.1f %5.1f None %s", ping, down,zone)
+            elif opcao == "upload":
+                logging.info("%5.1f None %5.1f %s", ping, up, zone)
+            elif opcao == "tudo":
+                logging.info("%5.1f %5.1f %5.1f %s", ping, down, up, zone)
+        opcao = interpretador()
