@@ -1,6 +1,10 @@
+from numpy import NaN
 import speedtest
 import logging
 import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib import dates, rcParams
+
 
 LOG_FILE = 'speedtest.log'
 
@@ -12,7 +16,6 @@ def setup_logging():
     datefmt="%Y-%m-%d %H:%M",
 )
 
-
 def download_and_upload():
     s = speedtest.Speedtest()
     s.get_best_server()
@@ -22,7 +25,7 @@ def download_and_upload():
 
     r = s.results.dict()
     print(r)
-    return r['ping'],r['download'],r['upload'],r['server']['name']+"-"+r['server']['country']
+    return r['ping'],r['download']*0.000001,r['upload']*0.000001,r['server']['name']+"-"+r['server']['country']
 
 def download():
     s = speedtest.Speedtest()
@@ -30,7 +33,7 @@ def download():
     s.download(threads=None)
 
     r = s.results.dict()
-    return r['ping'],r['download'],None,r['server']['name']+"-"+r['server']['country']
+    return r['ping'],r['download']*0.000001,None,r['server']['name']+"-"+r['server']['country']
 
 def upload():
     s = speedtest.Speedtest()
@@ -39,7 +42,7 @@ def upload():
 
 
     r = s.results.dict()
-    return r['ping'],None,r['upload'],r['server']['name']+"-"+r['server']['country']
+    return r['ping'],None,r['upload']*0.000001,r['server']['name']+"-"+r['server']['country']
 
 
 def interpretador():
@@ -54,6 +57,21 @@ def interpretador():
             print("\t"+o)
     
     return i
+
+def make_plot(df):   
+    fig, axs = plt.subplots(3)
+    fig.suptitle('Download, Upload and Ping')
+
+
+    axs[0].plot(df['download'], 'b-')
+    axs[0].get_xaxis().set_visible(False)
+    axs[1].plot(df['upload'], 'r-')
+    axs[1].get_xaxis().set_visible(False)
+    axs[2].plot(df['ping'], 'g-')
+    axs[2].get_xaxis().set_visible(False)
+
+    plt.show()
+
 def read_data():
     df = pd.io.parsers.read_csv(
         'speedtest.log',
@@ -64,8 +82,10 @@ def read_data():
         na_values=['TEST','FAILED'],
   )
 
-    print(df[-48:]) # return last 48 rows of data (i.e., 24 hours)
-    return None,None,None
+    make_plot(df[-48:])
+
+    return None, None, None, None
+
 def do_it(opc):
     if opc == "download":
         return download()
