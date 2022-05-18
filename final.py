@@ -5,7 +5,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import dates, rcParams
 
-
 LOG_FILE = 'speedtest.log'
 
 def setup_logging():
@@ -22,27 +21,44 @@ def download_and_upload():
     s.download(threads=None)
     s.upload(threads=None)
 
-
     r = s.results.dict()
-    print(r)
-    return r['ping'],r['download']*0.000001,r['upload']*0.000001,r['server']['name']+"-"+r['server']['country']
+
+    s2 = speedtest.Speedtest()
+    s2.get_best_server()
+    s2.download(threads=None)
+    s2.upload(threads=None)
+
+    r2 = s2.results.dict()
+
+    return r['ping'],r['download']*0.000001,r['upload']*0.000001,abs(r['ping']-r2['ping']),r['server']['name'].replace(" ","-")+"-"+r['server']['country']
 
 def download():
     s = speedtest.Speedtest()
     s.get_best_server()
     s.download(threads=None)
 
+    s2 = speedtest.Speedtest()
+    s2.get_best_server()
+    s2.download(threads=None)
+
+    r2 = s2.results.dict()
+
     r = s.results.dict()
-    return r['ping'],r['download']*0.000001,None,r['server']['name']+"-"+r['server']['country']
+    return r['ping'],r['download']*0.000001,None,abs(r['ping']-r2['ping']),r['server']['name'].replace(" ","-")+"-"+r['server']['country']
 
 def upload():
     s = speedtest.Speedtest()
     s.get_best_server()
     s.upload(threads=None)
 
+    s2 = speedtest.Speedtest()
+    s2.get_best_server()
+    s2.upload(threads=None)
+
+    r2 = s2.results.dict()
 
     r = s.results.dict()
-    return r['ping'],None,r['upload']*0.000001,r['server']['name']+"-"+r['server']['country']
+    return r['ping'],None,r['upload']*0.000001,abs(r['ping']-r2['ping']),r['server']['name'].replace(" ","-")+"-"+r['server']['country']
 
 
 def interpretador():
@@ -59,8 +75,8 @@ def interpretador():
     return i
 
 def make_plot(df):   
-    fig, axs = plt.subplots(3)
-    fig.suptitle('Download, Upload and Ping')
+    fig, axs = plt.subplots(4)
+    fig.suptitle('Download, Upload, Ping and Jitter')
 
 
     axs[0].plot(df['download'], 'b-')
@@ -69,13 +85,15 @@ def make_plot(df):
     axs[1].get_xaxis().set_visible(False)
     axs[2].plot(df['ping'], 'g-')
     axs[2].get_xaxis().set_visible(False)
+    axs[3].plot(df['jitter'], 'y-')
+    axs[3].get_xaxis().set_visible(False)
 
     plt.show()
 
 def read_data():
     df = pd.io.parsers.read_csv(
         'speedtest.log',
-        names='date time ping download upload zone'.split(),
+        names='date time ping download upload jitter zone'.split(),
         header=None,
         sep=r'\s+',
         parse_dates={'timestamp':[0,1]},
@@ -84,7 +102,7 @@ def read_data():
 
     make_plot(df[-48:])
 
-    return None, None, None, None
+    return None, None, None, None, None
 
 def do_it(opc):
     if opc == "download":
@@ -103,14 +121,14 @@ if __name__ == "__main__":
     while opcao != "exit":
     
         try:
-            ping, down, up, zone = do_it(opcao)
+            ping, down, up, jitter, zone = do_it(opcao)
         except ValueError as err:
             print(err)
         else:
             if opcao == "download":
-                logging.info("%5.1f %5.1f None %s", ping, down,zone)
+                logging.info("%5.1f %5.1f None %5.1f '%s'", ping, down, jitter, zone)
             elif opcao == "upload":
-                logging.info("%5.1f None %5.1f %s", ping, up, zone)
+                logging.info("%5.1f None %5.1f %5.1f '%s'", ping, up, jitter, zone)
             elif opcao == "tudo":
-                logging.info("%5.1f %5.1f %5.1f %s", ping, down, up, zone)
+                logging.info("%5.1f %5.1f %5.1f %5.1f '%s'", ping, down, up, jitter, zone)
         opcao = interpretador()
