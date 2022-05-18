@@ -126,9 +126,12 @@ if __name__ == "__main__":
             print(err)
         else:
             if opcao == "download":
+                print(f"Ping: {ping} Download: {down} Jitter: {jitter} Localização:'{zone}'")
                 logging.info("%5.1f %5.1f None %5.1f '%s'", ping, down, jitter, zone)
             elif opcao == "upload":
+                print(f"Ping: {ping} Upload: {up} Jitter: {jitter} Localização:'{zone}'")                
                 logging.info("%5.1f None %5.1f %5.1f '%s'", ping, up, jitter, zone)
             elif opcao == "tudo":
+                print(f"Ping: {ping} Download: {down} Upload: {up} Jitter: {jitter} Localização:'{zone}'")
                 logging.info("%5.1f %5.1f %5.1f %5.1f '%s'", ping, down, up, jitter, zone)
         opcao = interpretador()
